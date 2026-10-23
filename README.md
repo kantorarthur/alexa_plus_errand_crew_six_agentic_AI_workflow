@@ -22,6 +22,9 @@ Comparing prices means opening shop after shop and scrolling. Errand Crew does t
 
 Say you want a cheap phone. You ask your voice assistant, and from there it takes about half a minute! Isn't it great?
 
+# Demo Video
+https://github.com/user-attachments/assets/65202194-5317-4fb7-adba-221c09a53a1d
+
 
 ## Build and run
 
