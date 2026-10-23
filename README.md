@@ -1,8 +1,8 @@
-# Errand Crew - an observable six-agent AI workflow
+# Errand Crew - an observable six agentic AI workflow
 
 **Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
 
-### The MCP server uses a six-agent AI workflow
+### The MCP server uses a six agentic AI workflow
 
 - **A planner** (Claude Sonnet 5.5) turns the spoken request into a plan.
 - **Four worker agents** (Claude Haiku 5.5) browse Evomag, Altex, MediaGalaxy and Vexio in parallel, each in its own cloud browser.
