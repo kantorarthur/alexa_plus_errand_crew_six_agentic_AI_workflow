@@ -2,7 +2,7 @@
 
 **Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
 
-The project was developed in 7 hours during the Amazon Developer Hackaton! (https://devpost.com/software/errand-crew?ref_content=user-portfolio&ref_feature=in_progress)
+The project was developed in 7 hours during the Amazon Developer Hackaton! (https://devpost.com/software/errand-crew)
 
 ### The MCP server uses a six agentic AI workflow
 
