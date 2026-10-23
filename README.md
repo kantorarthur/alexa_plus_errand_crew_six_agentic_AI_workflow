@@ -79,7 +79,7 @@ Try it with the demo client (see below), using the `/mcp` URL of your service.
 
 ```bash
 git clone https://github.com/kantorarthur/alexa_plus_errand_crew_six_agentic_AI_workflow.git
-cd ./alexa_plus_errand_crew_amazon_hackaton
+cd ./alexa_plus_errand_crew_six_agentic_AI_workflow
 python -m venv .venv
 ```
 
