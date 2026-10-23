@@ -70,7 +70,7 @@ Try it with the demo client (see below), using the `/mcp` URL of your service.
 
 ```bash
 git clone https://github.com/kantorarthur/alexa_plus_errand_crew_six_agentic_AI_workflow.git
-cd alexa_plus_errand_crew_amazon_hackaton
+cd ./alexa_plus_errand_crew_amazon_hackaton
 python -m venv .venv
 ```
 
@@ -108,7 +108,7 @@ The demo client behaves like a voice assistant: it starts an errand, polls its s
 
 ```bash
 export MCP_TOKEN="<your-random-token>"      # PowerShell: $env:MCP_TOKEN = "<your-random-token>"
-.venv/bin/python scripts/demo_client.py "cheapest nokia phone" http://localhost:8000/mcp
+.venv/bin/python scripts/demo_client.py "desired item search input" http://localhost:8000/mcp
 ```
 
 For a Render deployment, pass its URL instead: `https://<your-service>.onrender.com/mcp`.
