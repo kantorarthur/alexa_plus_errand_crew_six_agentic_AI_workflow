@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import statistics
 from collections import Counter
 
 from .llm import StructuredLLM
@@ -22,6 +23,12 @@ log = logging.getLogger(__name__)
 NO_RESULT = "I couldn't find matching listings right now. Please try again in a moment."
 MAX_SUMMARY = 400
 _SPOKEN_CURRENCY = {"RON": "lei", "EUR": "euro", "USD": "dollars"}
+
+# A winning price below this share of the median of the other offers is flagged. It is a
+# warning only: the offer is still reported, but the answer says it is worth checking.
+IMPLAUSIBLE_RATIO = 0.25
+MIN_OTHER_OFFERS = 2
+PLAUSIBILITY_NOTE = "this price is much lower than the other offers, so it is worth checking"
 
 SYSTEM = """You turn already-decided facts about a price comparison into speech for a voice assistant.
 Use ONLY the JSON facts provided. Never add products, prices or shops that are not in it.
@@ -48,6 +55,25 @@ def choose_best(results: list[SiteResult]) -> tuple[SiteResult, ProductOffer] | 
 def money(offer: ProductOffer) -> str:
     amount = f"{offer.price:.2f}".rstrip("0").rstrip(".")
     return f"{amount} {_SPOKEN_CURRENCY.get(offer.currency, offer.currency)}"
+
+
+def price_looks_implausible(
+    results: list[SiteResult], best_site: SiteResult, offer: ProductOffer
+) -> bool:
+    """True if the winner costs far less than everything else found (same currency).
+
+    A page can contain a fake listing that passes the grounding check, because its text
+    really is on the page. Such a price tends to stand far apart from real ones.
+    """
+    others = [
+        o.price
+        for r in results
+        for o in r.offers
+        if o is not offer and o.currency == offer.currency
+    ]
+    if len(others) < MIN_OTHER_OFFERS:
+        return False
+    return offer.price < IMPLAUSIBLE_RATIO * statistics.median(others)
 
 
 def caveat_facts(results: list[SiteResult], best_site: SiteResult) -> list[str]:
@@ -128,7 +154,18 @@ class Judge:
             return None
         best_site, offer = best
         facts = caveat_facts(results, best_site)
+        implausible = price_looks_implausible(results, best_site, offer)
+        if implausible:
+            facts.append(PLAUSIBILITY_NOTE)
         summary = template_summary(best_site, offer, facts)
+        if implausible:
+            # The warning must reach the listener word for word: no model rewording.
+            return Verdict(
+                summary=summary,
+                best_site_id=best_site.site_id,
+                best_offer_name=offer.name,
+                caveats="; ".join(facts)[:300],
+            )
 
         data = {
             "request": request,

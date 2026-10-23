@@ -13,10 +13,12 @@ from .llm import start_meter
 from .planner import Planner
 from .registry import Registry, Site
 from .schemas import Errand, ErrandResult, Plan, SiteResult
-from .security import SlidingWindowLimiter
+from .security import SlidingWindowLimiter, looks_like_injection
 from .workers import Worker
 
 log = logging.getLogger(__name__)
+
+NOT_A_SEARCH = "I can only help compare prices of products. Tell me what you'd like to buy."
 
 
 class Busy(Exception):
@@ -84,6 +86,12 @@ class Orchestrator:
     async def _run(self, errand: Errand) -> None:
         meter = start_meter()
         try:
+            if looks_like_injection(errand.request):
+                # Obvious attack text: answer without spending a single model call.
+                plan = Plan(supported=False, reason=NOT_A_SEARCH)
+                errand.plan = plan
+                self._finish(errand, plan, [], None, NOT_A_SEARCH, meter)
+                return
             errand.state = "planning"
             plan = await self._planner.plan(errand.request)
             errand.plan = plan
