@@ -1,14 +1,18 @@
-# Errand Crew - a six agentic AI workflow
+# Errand Crew - an observable six-agent AI workflow
 
 **Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
 
-### The MCP server uses a six agentic AI workflow:  </br>
-- **A planner** (Claude Sonnet 5.5) - turns the spoken request into a plan. </br>
+### The MCP server uses a six-agent AI workflow
+
+- **A planner** (Claude Sonnet 5.5) turns the spoken request into a plan.
 - **Four worker agents** (Claude Haiku 5.5) browse Evomag, Altex, MediaGalaxy and Vexio in parallel, each in its own cloud browser.
-- **The judge** picks the cheapest match in code. A model (Claude Haiku 5.5) only words the result for speech, so the spoken answer never depends on a model behaving. </br>
+- **The judge** picks the cheapest match in code. A model (Claude Haiku 5.5) only words the result for speech, so the spoken answer never depends on a model behaving.
+
+**You can watch the agents work.** The browsers run on the [Kernel](https://www.kernel.sh) cloud browser infrastructure, as shown in the demo video below. If you run the server yourself with your own Kernel key and `KERNEL_HEADLESS=false`, you can see the four browsers live in the Kernel dashboard.
 
 The agents can only visit shops from a fixed allowlist, and everything they read on a page is treated as data, never as instructions.
 
+<img width="2000" height="1120" alt="Image" src="https://github.com/user-attachments/assets/c98256af-f620-46ad-b8e3-2c8ffc7c06a3" />
 
 
 
@@ -17,6 +21,98 @@ The agents can only visit shops from a fixed allowlist, and everything they read
 Comparing prices means opening shop after shop and scrolling. Errand Crew does that part for you, while you just ask a question out loud.
 
 Say you want a cheap phone. You ask your voice assistant, and from there it takes about half a minute! Isn't it great?
+
+
+## Build and run
+
+You need your own [Anthropic](https://console.anthropic.com) API key and [Kernel](https://www.kernel.sh) API key in both options.
+
+### Environment variables
+
+| Variable | Meaning |
+|---|---|
+| `ANTHROPIC_API_KEY` | Your Claude API key |
+| `KERNEL_API_KEY` | Your Kernel API key |
+| `ERRAND_CREW_TOKENS` | One bearer token per client, as `name:token,name:token`. Each token needs at least 24 characters and no commas, and all tokens must differ. Remove a pair to revoke that client. |
+| `KERNEL_HEADLESS` | Optional. `false` (the default) opens browsers with a screen you can watch in the Kernel dashboard. `true` runs them headless, which is faster and cheaper. |
+
+Generate a token with any random string tool, for example `openssl rand -hex 16`.
+
+### Option 1: Deploy on Render
+
+1. Fork or connect this repository in [Render](https://render.com) and create a **Web Service** from it.
+2. Use these settings:
+
+   | Setting | Value |
+   |---|---|
+   | Language | Python 3 (3.13) |
+   | Branch | `main` |
+   | Build command | `pip install -r requirements.txt` |
+   | Start command | `PYTHONPATH=src python -m errand_crew.server` |
+   | Health check path | `/health` |
+
+3. Add the four environment variables above in the service's **Environment** settings. For a hosted demo we recommend `KERNEL_HEADLESS=true`.
+4. Deploy. When the service shows **Live**, the MCP endpoint is `https://<your-service>.onrender.com/mcp`.
+
+Render's free plan puts the service to sleep when idle, so the first request after a pause is slow. A paid instance avoids that. Render sets the allowed host name by itself.
+
+Try it with the demo client (see below), using the `/mcp` URL of your service.
+
+### Option 2: Run locally
+
+```bash
+git clone https://github.com/kantorarthur/errand_crew_amazon_hackaton.git
+cd errand_crew_amazon_hackaton
+python -m venv .venv
+```
+
+Install the dependencies (on Windows use `.venv\Scripts\python`, on macOS and Linux use `.venv/bin/python`):
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+Set the environment variables, then start the server. macOS and Linux:
+
+```bash
+export ANTHROPIC_API_KEY="..."
+export KERNEL_API_KEY="..."
+export ERRAND_CREW_TOKENS="demo:<your-random-token>"
+export PYTHONPATH=src
+.venv/bin/python -m errand_crew.server
+```
+
+Windows PowerShell:
+
+```powershell
+$env:ANTHROPIC_API_KEY = "..."
+$env:KERNEL_API_KEY = "..."
+$env:ERRAND_CREW_TOKENS = "demo:<your-random-token>"
+$env:PYTHONPATH = "src"
+.venv\Scripts\python -m errand_crew.server
+```
+
+The server listens on `http://localhost:8000`, with the MCP endpoint at `/mcp` and a health check at `/health`.
+
+### Try it: the demo client
+
+The demo client behaves like a voice assistant: it starts an errand, polls its status and prints the spoken summary and the Claude usage. In a second terminal, set `MCP_TOKEN` to the token from `ERRAND_CREW_TOKENS`:
+
+```bash
+export MCP_TOKEN="<your-random-token>"      # PowerShell: $env:MCP_TOKEN = "<your-random-token>"
+.venv/bin/python scripts/demo_client.py "cheapest nokia phone" http://localhost:8000/mcp
+```
+
+For a Render deployment, pass its URL instead: `https://<your-service>.onrender.com/mcp`.
+
+### Run the tests
+
+```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -q
+```
+
+The tests use a scripted model and a fake browser, so they need no network, no keys and cost nothing.
 
 
 ## Dependencies
