@@ -1,0 +1,101 @@
+# Site registry: the ONLY sites the agents may visit.
+#
+# Category URLs come from each retailer's own navigation (2026-10-23). robots.txt allows
+# these listing pages; site search pages (/cauta/, /search, ?q=) are never used.
+# Terms of service still need a manual read by the project owner.
+#
+# Per site:
+#   sort_asc   how to turn a category URL ({base}) into its "cheapest first" version
+#   next_page  how to build page n >= 2 from the page-1 URL ({listing}, {n})
+#   max_pages  how many pages a worker may read (hard cap of 3 in code)
+# Per category:
+#   sorted_by_price: true only where the sorted URL was checked by hand. Elsewhere the
+#   default order is used and the summary says so.
+#
+# Why Evomag has max_pages 1: its robots.txt blocks URLs with a comma or two ':' in the
+# filter segment, so "sorted + page 2" is disallowed.
+#
+# altex.ro and mediagalaxy.ro share URL structure and robots rules and both pages carry
+# the title "Altex", so they probably share a catalog and may show the same prices.
+categories:
+  laptops: laptops and notebooks
+  monitors: computer monitors
+  smartphones: smartphones
+  tvs: televisions
+  headphones: headphones
+
+sites:
+  - id: evomag
+    name: evomag.ro
+    domain: evomag.ro
+    sort_asc: "{base}filtru/ordonare:pretcrescator"
+    max_pages: 1
+    categories:
+      laptops:
+        url: https://www.evomag.ro/portabile-laptopuri-notebook/
+        sorted_by_price: true
+      monitors:
+        url: https://www.evomag.ro/monitoare-monitoare-led/
+      smartphones:
+        url: https://www.evomag.ro/telefoane-tablete-accesorii-telefoane/
+      tvs:
+        url: https://www.evomag.ro/tv-multimedia-televizoare/
+      headphones:
+        url: https://www.evomag.ro/telefoane-tablete-accesorii-accesorii-telefoane-casti-bluetooth-wireless-airpods-si-audio/
+
+  - id: altex
+    name: altex.ro
+    domain: altex.ro
+    sort_asc: "{base}filtru/order/price/dir/asc/"
+    next_page: "{listing}p/{n}/"
+    max_pages: 3
+    categories:
+      laptops:
+        url: https://altex.ro/laptopuri/cpl/
+        sorted_by_price: true
+      monitors:
+        url: https://altex.ro/monitoare-pc/cpl/
+        sorted_by_price: true
+      smartphones:
+        url: https://altex.ro/telefoane/cpl/
+      tvs:
+        url: https://altex.ro/televizoare/cpl/
+      headphones:
+        url: https://altex.ro/casti-calculator/cpl/
+
+  - id: mediagalaxy
+    name: mediagalaxy.ro
+    domain: mediagalaxy.ro
+    sort_asc: "{base}filtru/order/price/dir/asc/"
+    next_page: "{listing}p/{n}/"
+    max_pages: 3
+    # No smartphone category: its phone listing also mixes in tablets.
+    categories:
+      laptops:
+        url: https://mediagalaxy.ro/laptopuri/cpl/
+        sorted_by_price: true
+      monitors:
+        url: https://mediagalaxy.ro/monitoare-pc/cpl/
+        sorted_by_price: true
+      tvs:
+        url: https://mediagalaxy.ro/televizoare/cpl/
+      headphones:
+        url: https://mediagalaxy.ro/casti-calculator/cpl/
+
+  - id: vexio
+    name: vexio.ro
+    domain: vexio.ro
+    # Vexio only sorts through its interface (no URL), so it stays in default order.
+    next_page: "{listing}pagina{n}/"
+    max_pages: 3
+    categories:
+      laptops:
+        url: https://www.vexio.ro/laptop-ultrabook/
+      monitors:
+        url: https://www.vexio.ro/monitoare/
+      smartphones:
+        url: https://www.vexio.ro/smartphone/
+      tvs:
+        url: https://www.vexio.ro/televizoare/
+      headphones:
+        url: https://www.vexio.ro/casti/

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: errand-crew
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=src python -m errand_crew.server
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: ERRAND_CREW_TOKENS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: KERNEL_API_KEY
+        sync: false
