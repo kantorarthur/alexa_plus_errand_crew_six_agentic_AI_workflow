@@ -82,12 +82,23 @@ class Verdict(BaseModel):
     caveats: str = Field(default="", max_length=300)
 
 
+class Usage(BaseModel):
+    """Claude tokens used by one errand, counted from the API's own usage fields."""
+
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    # Estimate from the price table in llm.py; None if a model has no known price.
+    estimated_cost_usd: float | None = None
+
+
 class ErrandResult(BaseModel):
     request: str
     plan: Plan
     sites: list[SiteResult]
     verdict: Verdict | None
     spoken_summary: str
+    usage: Usage | None = None
 
     # Counted in code, never by a model, so the coverage claim is always true.
     @computed_field  # type: ignore[prop-decorator]

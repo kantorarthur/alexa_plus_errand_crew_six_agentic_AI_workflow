@@ -68,6 +68,10 @@ async def main() -> int:
         print(line)
     if "sites_compared" in result:
         print(f"Compared {result['sites_compared']} of {result['sites_asked']} shops.")
+    usage = result.get("usage")
+    if usage:
+        print(f"Claude usage: {usage['calls']} calls, {usage['input_tokens']} in / "
+              f"{usage['output_tokens']} out tokens, about ${usage['estimated_cost_usd']} (estimate)")
     return 0 if result.get("status") == "done" else 1
 
 

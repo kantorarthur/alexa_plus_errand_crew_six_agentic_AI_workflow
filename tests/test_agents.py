@@ -397,3 +397,52 @@ def test_glued_price_would_pass_grounding_which_is_why_the_fix_is_needed():
     assert grounded("Telefon mobil Nokia 105", 7999, "Telefon mobil Nokia 105\n7999lei")  # the bug
     assert grounded("Telefon mobil Nokia 105", 79.99, "Telefon mobil Nokia 105\n79,99 lei")
     assert not grounded("Telefon mobil Nokia 105", 7999, "Telefon mobil Nokia 105\n79,99 lei")
+
+
+# --- token usage and the wording for shops with no match -------------------------------
+
+
+def test_usage_meter_adds_calls_and_estimates_cost():
+    from errand_crew.llm import UsageMeter
+
+    meter = UsageMeter()
+    assert meter.snapshot() is None  # nothing counted yet
+    meter.add("claude-haiku-5-5", 10_000, 1_000)  # 10k*0.10/1M + 1k*0.50/1M
+    meter.add("claude-sonnet-5-5", 2_000, 200)  # 2k*2/1M + 200*10/1M
+    usage = meter.snapshot()
+    assert (usage.calls, usage.input_tokens, usage.output_tokens) == (2, 12_000, 1_200)
+    assert usage.estimated_cost_usd == pytest.approx(0.0015 + 0.006, abs=1e-6)
+    meter.add("some-unknown-model", 1, 1)
+    assert meter.snapshot().estimated_cost_usd is None  # never guess a price
+
+
+async def test_claude_wrapper_counts_tokens_for_the_current_errand():
+    from types import SimpleNamespace
+
+    from errand_crew.llm import start_meter
+
+    block = SimpleNamespace(type="tool_use", name="submit_plan", input={"supported": False})
+    llm, messages = _claude_llm([block])
+
+    async def create(**kwargs):
+        return SimpleNamespace(content=[block], usage=SimpleNamespace(input_tokens=500, output_tokens=40))
+
+    messages.create = create
+    meter = start_meter()
+    await llm.structured(model="claude-haiku-5-5", system="s", user="u", schema=Plan, tool_name="submit_plan")
+    await llm.structured(model="claude-haiku-5-5", system="s", user="u", schema=Plan, tool_name="submit_plan")
+    usage = meter.snapshot()
+    assert (usage.calls, usage.input_tokens, usage.output_tokens) == (2, 1000, 80)
+
+
+async def test_no_match_is_not_reported_as_a_failure():
+    results = [
+        SiteResult(site_id="altex", site_name="altex.ro", source_url="u", status="ok", sorted_by_price=True,
+                   offers=[ProductOffer(name="Laptop A", price=3000)]),
+        SiteResult(site_id="vexio", site_name="vexio.ro", source_url="u", status="empty", pages_read=3),
+        SiteResult(site_id="evomag", site_name="evomag.ro", source_url="u", status="blocked"),
+    ]
+    verdict = await Judge(FakeLLM(write_summary=Narration(summary="")), "m").judge("laptop", Plan(supported=True), results)
+    assert "no usable result from evomag.ro" in verdict.caveats
+    assert "no matching product found at vexio.ro in the pages checked" in verdict.caveats
+    assert "usable result from vexio" not in verdict.caveats  # an empty page is not an error

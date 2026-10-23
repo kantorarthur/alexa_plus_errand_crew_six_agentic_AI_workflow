@@ -73,6 +73,10 @@ async def main() -> int:
         if result.verdict.caveats:
             print("Caveats:", result.verdict.caveats)
     print("\nSPOKEN SUMMARY:\n", result.spoken_summary)
+    if result.usage:
+        u = result.usage
+        print(f"\nClaude usage: {u.calls} calls, {u.input_tokens} in / {u.output_tokens} out tokens, "
+              f"about ${u.estimated_cost_usd} (estimate)")
     return 0
 
 

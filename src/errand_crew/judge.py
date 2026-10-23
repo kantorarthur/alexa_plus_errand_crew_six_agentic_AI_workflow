@@ -54,9 +54,12 @@ def caveat_facts(results: list[SiteResult], best_site: SiteResult) -> list[str]:
     facts = []
     if not best_site.sorted_by_price:
         facts.append(f"{best_site.site_name} was only checked over its first pages")
-    gaps = [r.site_name for r in results if r.status != "ok"]
-    if gaps:
-        facts.append("no usable result from " + ", ".join(gaps))
+    failed = [r.site_name for r in results if r.status in ("blocked", "error")]
+    if failed:
+        facts.append("no usable result from " + ", ".join(failed))
+    empty = [r.site_name for r in results if r.status == "empty"]
+    if empty:
+        facts.append("no matching product found at " + ", ".join(empty) + " in the pages checked")
     return facts
 
 

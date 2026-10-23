@@ -9,6 +9,7 @@ from collections import OrderedDict
 
 from .config import Settings
 from .judge import NO_RESULT, Judge
+from .llm import start_meter
 from .planner import Planner
 from .registry import Registry, Site
 from .schemas import Errand, ErrandResult, Plan, SiteResult
@@ -81,13 +82,14 @@ class Orchestrator:
             self._errands.pop(finished.pop(0), None)
 
     async def _run(self, errand: Errand) -> None:
+        meter = start_meter()
         try:
             errand.state = "planning"
             plan = await self._planner.plan(errand.request)
             errand.plan = plan
 
             if not plan.supported or not plan.category:
-                self._finish(errand, plan, [], None, plan.reason or NO_RESULT)
+                self._finish(errand, plan, [], None, plan.reason or NO_RESULT, meter)
                 return
 
             sites = [s for i in plan.site_ids if (s := self._registry.site(i))]
@@ -100,7 +102,7 @@ class Orchestrator:
             errand.state = "judging"
             verdict = await self._judge.judge(errand.request, plan, list(results))
             spoken = verdict.summary if verdict else NO_RESULT
-            self._finish(errand, plan, list(results), verdict, spoken)
+            self._finish(errand, plan, list(results), verdict, spoken, meter)
         except Exception:  # noqa: BLE001
             log.exception("errand %s failed", errand.id)
             errand.state = "failed"
@@ -138,8 +140,16 @@ class Orchestrator:
         return result
 
     @staticmethod
-    def _finish(errand, plan: Plan, results, verdict, spoken: str) -> None:
+    def _finish(errand, plan: Plan, results, verdict, spoken: str, meter=None) -> None:
+        usage = meter.snapshot() if meter else None
+        if usage:
+            log.info(
+                "errand %s usage: calls=%d in=%d out=%d est_cost_usd=%s",
+                errand.id, usage.calls, usage.input_tokens, usage.output_tokens,
+                usage.estimated_cost_usd,
+            )
         errand.result = ErrandResult(
+            usage=usage,
             request=errand.request,
             plan=plan,
             sites=results,
