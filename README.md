@@ -64,7 +64,7 @@ Try it with the demo client (see below), using the `/mcp` URL of your service.
 ### Option 2: Run locally
 
 ```bash
-git clone https://github.com/kantorarthur/errand_crew_amazon_hackaton.git
+git clone https://github.com/kantorarthur/errand_crew_six_agentic_AI_workflow.git
 cd errand_crew_amazon_hackaton
 python -m venv .venv
 ```
