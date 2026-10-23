@@ -16,7 +16,7 @@ from fakes import (
     PageFetch,
     Plan,
     offer,
-    Verdict,
+    Narration,
     WorkerOutput,
     listing_text,
     make_orchestrator,
@@ -42,11 +42,7 @@ def happy_parts():
     llm = FakeLLM(
         submit_plan=Plan(supported=True, category="laptops", site_ids=["evomag", "altex"], focus="cheap"),
         report_offers=worker_out,
-        submit_verdict=Verdict(
-            summary="The Lenovo IdeaPad 3 at altex.ro is cheapest.",
-            best_site_id="altex",
-            best_offer_name="Laptop Lenovo IdeaPad 3",
-        ),
+        write_summary=Narration(summary="The Lenovo IdeaPad 3 at altex.ro is cheapest at 2899 lei."),
     )
     return llm, FakeFetcher(pages)
 

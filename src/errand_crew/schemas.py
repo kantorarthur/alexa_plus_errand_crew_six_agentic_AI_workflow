@@ -66,6 +66,12 @@ class SiteResult(BaseModel):
     error: str = Field(default="", max_length=200)
 
 
+class Narration(BaseModel):
+    """Model-written wording of facts the code already decided."""
+
+    summary: str = Field(description="One or two short spoken sentences.")
+
+
 class Verdict(BaseModel):
     summary: str = Field(
         max_length=400,

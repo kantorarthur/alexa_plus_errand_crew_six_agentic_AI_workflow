@@ -95,6 +95,10 @@ class Worker:
             log.warning("fetch failed: %s", type(exc).__name__)
             return ("error", "could not load the page")
         if looks_blocked(page.text, page.status):
+            log.warning(
+                "blocked by rule: http=%s text_chars=%d url=%s",
+                page.status, len(page.text), page.final_url,
+            )
             return ("blocked", "the site blocked automated access")
         try:
             out = await self._llm.structured(
@@ -105,12 +109,22 @@ class Worker:
                 tool_name="report_offers",
                 max_tokens=1500,
             )
-        except LLMError:
+        except LLMError as exc:
+            log.warning("worker model output rejected: %s", exc)
             return ("error", "could not read the listings")
         if out.blocked:
+            log.warning(
+                "blocked by model: http=%s text_chars=%d url=%s",
+                page.status, len(page.text), page.final_url,
+            )
             return ("blocked", "the page was not a listing")
         return [
-            ProductOffer(name=o.name, price=o.price, currency=o.currency, specs=o.specs)
+            ProductOffer(
+                name=o.name,
+                price=o.price,
+                currency=o.currency,
+                specs=o.specs,
+            )
             for o in out.offers
             if o.matches_request and grounded(o.name, o.price, page.text)
         ]

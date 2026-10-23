@@ -1,3 +1,4 @@
+import os
 import pytest
 import json
 
@@ -16,6 +17,7 @@ from fakes import (
     Plan,
     ProductOffer,
     offer,
+    Narration,
     Verdict,
     WorkerOutput,
     listing_text,
@@ -113,14 +115,73 @@ def _results():
     ]
 
 
-async def test_judge_cannot_point_at_nonexistent_offer():
-    bad = Verdict(summary="Buy it.", best_site_id="evomag", best_offer_name="Laptop Z")
-    v = await Judge(FakeLLM(submit_verdict=bad), "m").judge("laptop", Plan(supported=True), _results())
-    assert v.best_site_id is None and v.best_offer_name is None
+def _offer_results():
+    return [
+        SiteResult(site_id="evomag", site_name="evomag.ro", source_url="u", status="ok",
+                   offers=[ProductOffer(name="Laptop A (2024)", price=3000)], sorted_by_price=True, pages_read=1),
+        SiteResult(site_id="vexio", site_name="vexio.ro", source_url="u", status="ok",
+                   offers=[ProductOffer(name="Laptop B", price=2499.5)], sorted_by_price=False, pages_read=3),
+        SiteResult(site_id="altex", site_name="altex.ro", source_url="u", status="empty"),
+    ]
 
-    good = Verdict(summary="Buy it.", best_site_id="evomag", best_offer_name="Laptop A")
-    v = await Judge(FakeLLM(submit_verdict=good), "m").judge("laptop", Plan(supported=True), _results())
-    assert v.best_site_id == "evomag"
+
+async def _judge(narration):
+    llm = FakeLLM(write_summary=narration)
+    verdict = await Judge(llm, "m").judge("laptop", Plan(supported=True), _offer_results())
+    return verdict, llm
+
+
+def test_code_chooses_the_cheapest_offer_in_one_currency():
+    from errand_crew.judge import choose_best
+
+    site, best = choose_best(_offer_results())
+    assert (site.site_id, best.name) == ("vexio", "Laptop B")
+    mixed = [
+        SiteResult(site_id="a", site_name="a.ro", source_url="u", status="ok",
+                   offers=[ProductOffer(name="Eur thing", price=10, currency="EUR")]),
+        SiteResult(site_id="b", site_name="b.ro", source_url="u", status="ok",
+                   offers=[ProductOffer(name="Lei thing", price=500)]),
+    ]
+    assert choose_best(mixed)[1].name == "Lei thing"  # never compares EUR with RON
+    assert choose_best([]) is None
+
+
+async def test_judge_uses_the_model_wording_when_it_matches_the_data():
+    verdict, llm = await _judge(Narration(summary="Laptop B at vexio.ro is cheapest at 2499.50 lei, among the first pages checked."))
+    assert verdict.summary.startswith("Laptop B at vexio.ro")
+    assert (verdict.best_site_id, verdict.best_offer_name) == ("vexio", "Laptop B")
+    assert "first pages" in verdict.caveats and "altex.ro" in verdict.caveats
+    assert llm.calls[0]["tool"] == "write_summary"
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "Laptop A at evomag.ro is cheapest at 3000 lei.",  # wrong shop and price
+        "Laptop B at vexio.ro is cheapest.",  # no price
+        "Laptop B at vexio.ro costs 2499.50 lei, down from 3999 lei.",  # invented price
+        "Laptop B at vexio.ro for 2499.50 lei, see https://vexio.ro/x",  # URL
+        "",
+    ],
+)
+async def test_judge_falls_back_to_the_template_when_wording_disagrees(bad):
+    verdict, _ = await _judge(Narration(summary=bad))
+    assert verdict.summary.startswith("The cheapest I found is Laptop B at vexio.ro for 2499.5 lei")
+    assert "first pages" in verdict.summary and "altex.ro" in verdict.summary
+
+
+async def test_judge_survives_any_model_failure():
+    for failure in (LLMError("bad"), RuntimeError("api down")):
+        verdict, _ = await _judge(failure)
+        assert verdict is not None and verdict.best_site_id == "vexio"
+
+
+async def test_judge_allows_numbers_that_are_part_of_product_names():
+    results = [SiteResult(site_id="a", site_name="altex.ro", source_url="u", status="ok",
+                          offers=[ProductOffer(name="Telefon NOKIA 105 (2024)", price=129.99)], sorted_by_price=True)]
+    llm = FakeLLM(write_summary=Narration(summary="The Nokia 105 (2024) at altex.ro is 129.99 lei."))
+    verdict = await Judge(llm, "m").judge("nokia", Plan(supported=True), results)
+    assert verdict.summary == "The Nokia 105 (2024) at altex.ro is 129.99 lei."
 
 
 async def test_judge_skips_llm_when_no_offers():
@@ -226,7 +287,7 @@ async def test_later_page_failure_keeps_earlier_offers():
 
 
 async def test_judge_is_told_which_shops_are_sorted_and_which_failed():
-    llm = FakeLLM(submit_verdict=Verdict(summary="ok", best_site_id="altex", best_offer_name="Laptop A"))
+    llm = FakeLLM(write_summary=Narration(summary="x"))
     results = [
         SiteResult(site_id="altex", site_name="altex.ro", source_url="u", status="ok",
                    offers=[ProductOffer(name="Laptop A", price=3000)], pages_read=1, sorted_by_price=True),
@@ -234,4 +295,105 @@ async def test_judge_is_told_which_shops_are_sorted_and_which_failed():
     ]
     await Judge(llm, "m").judge("laptop", Plan(supported=True), results)
     sent = llm.calls[0]["user"]
-    assert "cheapest_first" in sent and '"status": "blocked"' in sent
+    assert "no usable result from vexio.ro" in sent
+
+
+# --- the Claude wrapper ------------------------------------------------------
+
+
+class _FakeMessages:
+    def __init__(self, blocks):
+        self.blocks = blocks
+        self.kwargs = None
+
+    async def create(self, **kwargs):
+        from types import SimpleNamespace
+
+        self.kwargs = kwargs
+        return SimpleNamespace(content=self.blocks)
+
+
+def _claude_llm(blocks):
+    from types import SimpleNamespace
+
+    from errand_crew.llm import ClaudeLLM
+
+    llm = ClaudeLLM("key")
+    messages = _FakeMessages(blocks)
+    llm._client = SimpleNamespace(messages=messages)
+    return llm, messages
+
+
+async def test_claude_wrapper_never_forces_tool_choice_and_validates():
+    from types import SimpleNamespace
+
+    block = SimpleNamespace(type="tool_use", name="submit_plan", input={"supported": False})
+    llm, messages = _claude_llm([block])
+    plan = await llm.structured(
+        model="claude-sonnet-5-5", system="s", user="u", schema=Plan, tool_name="submit_plan"
+    )
+    assert plan.supported is False
+    assert messages.kwargs["tool_choice"] == {"type": "auto"}  # forced choice is a 400 on Sonnet 5.5
+    assert "submit_plan" in messages.kwargs["system"]
+
+
+async def test_claude_wrapper_rejects_plain_text_and_invalid_tool_input():
+    from types import SimpleNamespace
+
+    text = SimpleNamespace(type="text", text="Sure! Here is a plan")
+    llm, _ = _claude_llm([text])
+    with pytest.raises(LLMError):
+        await llm.structured(model="m", system="s", user="u", schema=Plan, tool_name="submit_plan")
+
+    bad = SimpleNamespace(type="tool_use", name="submit_plan", input={"supported": "maybe?"})
+    llm, _ = _claude_llm([bad])
+    with pytest.raises(LLMError):
+        await llm.structured(model="m", system="s", user="u", schema=Plan, tool_name="submit_plan")
+
+
+# --- superscript decimals (Evomag prints 79<sup>99</sup> lei) -----------------------
+
+EVOMAG_PRICE_HTML = """<html><body>
+<div class="npi_price"><div class="price_block_list"><div></div>
+<p class="x">
+        79<sup class="tw-top-[-4px] tw-ml-0.5">99</sup><span class="tw-ml-1.5">lei</span>
+    </p></div></div>
+<p>3.499<sup>99</sup> <span>lei</span></p>
+<p>Suprafata 10 m<sup>2</sup> si 25<sup>99</sup> nota</p>
+</body></html>"""
+
+
+def test_decimal_fix_is_part_of_the_fetch_script():
+    js = build_fetch_js("https://www.evomag.ro/x/", ["evomag.ro"], 1000)
+    assert "querySelectorAll('sup')" in js and "__" not in js
+
+
+def test_decimal_fix_in_a_real_browser():
+    """Runs the exact script in Chromium. Skipped where Playwright/Chromium is missing."""
+    pytest.importorskip("playwright.sync_api")
+    from playwright.sync_api import sync_playwright
+
+    from errand_crew.browser import FIX_DECIMALS_JS
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM_PATH") or None)
+            page = browser.new_page()
+            page.set_content(EVOMAG_PRICE_HTML)
+            before = page.evaluate("document.body.innerText")
+            page.evaluate(FIX_DECIMALS_JS)
+            after = page.evaluate("document.body.innerText")
+            browser.close()
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"no usable Chromium: {type(exc).__name__}")
+    assert "7999" in before  # the bug
+    assert "79,99 lei" in after and "3.499,99 lei" in after
+    assert "25 99" not in after and "2599 nota" in after  # no currency nearby: untouched
+
+
+def test_glued_price_would_pass_grounding_which_is_why_the_fix_is_needed():
+    from errand_crew.security import grounded
+
+    assert grounded("Telefon mobil Nokia 105", 7999, "Telefon mobil Nokia 105\n7999lei")  # the bug
+    assert grounded("Telefon mobil Nokia 105", 79.99, "Telefon mobil Nokia 105\n79,99 lei")
+    assert not grounded("Telefon mobil Nokia 105", 7999, "Telefon mobil Nokia 105\n79,99 lei")

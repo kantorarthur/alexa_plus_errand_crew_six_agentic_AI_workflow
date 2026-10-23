@@ -1,7 +1,12 @@
-"""Thin wrapper over the Claude API that forces schema-validated output.
+"""Thin wrapper over the Claude API that returns schema-validated output.
 
-Every LLM call in this project is a forced tool call whose input must validate against a
+Every LLM call in this project must end in a tool call whose input validates against a
 Pydantic model, so free-form model text never flows between agents.
+
+Sonnet 5.5 rejects a forced tool_choice ("tool" or "any") with a 400, so every call uses
+tool_choice "auto" and the system prompt tells the model to answer through the tool.
+The guarantee does not come from the API: it comes from the Pydantic validation below,
+and a reply that is not a valid tool call is an LLMError.
 """
 
 from __future__ import annotations
@@ -48,7 +53,10 @@ class ClaudeLLM:
         response = await self._client.messages.create(
             model=model,
             max_tokens=max_tokens,
-            system=system,
+            system=(
+                f"{system}\n\nAnswer only by calling the `{tool_name}` tool exactly once. "
+                "Do not reply in plain text."
+            ),
             tools=[
                 {
                     "name": tool_name,
@@ -56,7 +64,7 @@ class ClaudeLLM:
                     "input_schema": schema.model_json_schema(),
                 }
             ],
-            tool_choice={"type": "tool", "name": tool_name},
+            tool_choice={"type": "auto"},
             messages=[{"role": "user", "content": user}],
         )
         for block in response.content:

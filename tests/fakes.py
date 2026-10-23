@@ -8,7 +8,7 @@ from errand_crew.judge import Judge
 from errand_crew.orchestrator import Orchestrator
 from errand_crew.planner import Planner
 from errand_crew.registry import Registry
-from errand_crew.schemas import ExtractedOffer, Plan, ProductOffer, Verdict, WorkerOutput
+from errand_crew.schemas import ExtractedOffer, Narration, Plan, ProductOffer, Verdict, WorkerOutput
 from errand_crew.workers import Worker
 
 TOKEN = "t" * 32
@@ -89,6 +89,7 @@ __all__ = [
     "PageFetch",
     "Plan",
     "ProductOffer",
+    "Narration",
     "Verdict",
     "WorkerOutput",
     "ExtractedOffer",

@@ -9,8 +9,9 @@
 #   next_page  how to build page n >= 2 from the page-1 URL ({listing}, {n})
 #   max_pages  how many pages a worker may read (hard cap of 3 in code)
 # Per category:
-#   sorted_by_price: true only where the sorted URL was checked by hand. Elsewhere the
-#   default order is used and the summary says so.
+#   sorted_by_price: true only where the sorted URL was checked by hand (Altex and
+#   MediaGalaxy: all categories; Evomag: all categories). Elsewhere the default order is used
+#   and the summary says so.
 #
 # Why Evomag has max_pages 1: its robots.txt blocks URLs with a comma or two ':' in the
 # filter segment, so "sorted + page 2" is disallowed.
@@ -36,12 +37,16 @@ sites:
         sorted_by_price: true
       monitors:
         url: https://www.evomag.ro/monitoare-monitoare-led/
+        sorted_by_price: true
       smartphones:
         url: https://www.evomag.ro/telefoane-tablete-accesorii-telefoane/
+        sorted_by_price: true
       tvs:
         url: https://www.evomag.ro/tv-multimedia-televizoare/
+        sorted_by_price: true
       headphones:
         url: https://www.evomag.ro/telefoane-tablete-accesorii-accesorii-telefoane-casti-bluetooth-wireless-airpods-si-audio/
+        sorted_by_price: true
 
   - id: altex
     name: altex.ro
@@ -58,10 +63,13 @@ sites:
         sorted_by_price: true
       smartphones:
         url: https://altex.ro/telefoane/cpl/
+        sorted_by_price: true
       tvs:
         url: https://altex.ro/televizoare/cpl/
+        sorted_by_price: true
       headphones:
         url: https://altex.ro/casti-calculator/cpl/
+        sorted_by_price: true
 
   - id: mediagalaxy
     name: mediagalaxy.ro
@@ -69,7 +77,7 @@ sites:
     sort_asc: "{base}filtru/order/price/dir/asc/"
     next_page: "{listing}p/{n}/"
     max_pages: 3
-    # No smartphone category: its phone listing also mixes in tablets.
+    # The phone listing may also show tablets; the worker keeps only items that fit the request.
     categories:
       laptops:
         url: https://mediagalaxy.ro/laptopuri/cpl/
@@ -77,10 +85,15 @@ sites:
       monitors:
         url: https://mediagalaxy.ro/monitoare-pc/cpl/
         sorted_by_price: true
+      smartphones:
+        url: https://mediagalaxy.ro/telefoane/cpl/
+        sorted_by_price: true
       tvs:
         url: https://mediagalaxy.ro/televizoare/cpl/
+        sorted_by_price: true
       headphones:
         url: https://mediagalaxy.ro/casti-calculator/cpl/
+        sorted_by_price: true
 
   - id: vexio
     name: vexio.ro
