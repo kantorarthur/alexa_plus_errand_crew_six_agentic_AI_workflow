@@ -30,6 +30,15 @@ https://github.com/user-attachments/assets/65202194-5317-4fb7-adba-221c09a53a1d
 
 https://www.youtube.com/watch?v=wEPq4M-xuaM
 
+## Current limitations (TLDR)
+
+- **Shops:** Agent only searches prices on Evomag, Altex, MediaGalaxy and Vexio.
+- **Products:** Agent only searches headphones, TVs, phones, laptops and monitors.
+
+Both limits are deliberate. The agents can only visit the hardcoded shops and category pages listed in `src/errand_crew/sites.yaml`, which is a security measure (they can never be sent to another site) and also makes each request faster, because the agents go straight to the right listing instead of searching the web.
+
+The limits are easy to extend: add a shop, or a category page for a shop, to `sites.yaml`. Each new entry needs its category URLs, and, where the shop supports it, a price-sorting template. Check the shop's `robots.txt` and terms of service first. The registry validates every URL when the server starts.
+
 
 ## Build and run
 
@@ -127,7 +136,7 @@ The tests use a scripted model and a fake browser, so they need no network, no k
 
 **Python:** 3.13 on Render (`PYTHON_VERSION=3.13.5`); the tests also run on 3.14.
 
-### Runtime (`requirements.txt`, pinned)
+### Runtime (`requirements.txt`)
 
 | Package | Version | What it is used for |
 |---|---|---|
