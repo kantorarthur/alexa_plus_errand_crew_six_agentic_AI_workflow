@@ -25,6 +25,8 @@ Say you want a cheap phone. You ask your voice assistant, and from there it take
 # Demo Video
 https://github.com/user-attachments/assets/65202194-5317-4fb7-adba-221c09a53a1d
 
+https://www.youtube.com/watch?v=wEPq4M-xuaM
+
 
 ## Build and run
 
