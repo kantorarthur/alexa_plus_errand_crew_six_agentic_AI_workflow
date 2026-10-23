@@ -5,6 +5,9 @@ from __future__ import annotations
 from .llm import StructuredLLM
 from .registry import Registry
 from .schemas import Plan
+from .security import looks_like_injection
+
+MAX_FOCUS = 80
 
 SYSTEM = """You plan product price comparisons for a voice assistant.
 You can only use the categories and sites listed below. Never invent either.
@@ -55,10 +58,13 @@ class Planner:
         chosen = [i for i in dict.fromkeys(raw.site_ids) if i in covering]
         if not chosen:
             chosen = sorted(covering)
+        focus = " ".join(raw.focus.split())[:MAX_FOCUS]
+        if looks_like_injection(focus):
+            focus = ""
         return Plan(
             supported=True,
             category=category,
             site_ids=chosen[: self._max_sites],
-            focus=raw.focus,
+            focus=focus,
             reason=raw.reason,
         )

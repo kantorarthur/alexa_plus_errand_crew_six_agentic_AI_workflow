@@ -67,6 +67,21 @@ class SlidingWindowLimiter:
         self._events.append(self._clock())
 
 
+# One cheap extra layer, not the protection itself: a rephrased attack gets past it. The
+# real limits are structural (validated plan, registry-only URLs, no tools for models).
+INJECTION_PATTERNS = (
+    r"\b(ignore|disregard|forget|override)\b.{0,30}\b(instructions?|rules?|prompts?|guidelines)\b",
+    r"\b(system|developer)\s+(prompt|message|mode)\b",
+    r"\bjailbreak\b",
+    r"\bwaste\b.{0,20}\btokens?\b",
+)
+_INJECTION_RE = re.compile("|".join(INJECTION_PATTERNS), re.IGNORECASE | re.DOTALL)
+
+
+def looks_like_injection(text: str) -> bool:
+    return bool(_INJECTION_RE.search(text or ""))
+
+
 def looks_blocked(text: str, status: int) -> bool:
     """Cheap, deterministic pre-check before any LLM sees the page."""
     if status in (401, 403, 429, 503):
