@@ -58,6 +58,17 @@ def _int(env: dict[str, str], name: str, default: int) -> int:
     return value
 
 
+def _bool(env: dict[str, str], name: str, default: bool) -> bool:
+    raw = env.get(name, "").strip().lower()
+    if not raw:
+        return default
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    if raw in ("0", "false", "no", "off"):
+        return False
+    raise ValueError(f"{name} must be true or false, got {raw!r}")
+
+
 def _csv(env: dict[str, str], name: str) -> tuple[str, ...]:
     return tuple(p.strip() for p in env.get(name, "").split(",") if p.strip())
 
@@ -82,6 +93,8 @@ class Settings:
     worker_timeout_s: int = 150  # covers up to 3 pages per site
     max_page_chars: int = 15_000
     kept_errands: int = 100
+    # False: Kernel browsers have a screen and a live view you can watch. True: headless.
+    kernel_headless: bool = False
 
     allowed_hosts: tuple[str, ...] = ()
     allowed_origins: tuple[str, ...] = ()
@@ -107,5 +120,6 @@ class Settings:
             max_errands_per_hour=_int(e, "MAX_ERRANDS_PER_HOUR", 20),
             max_errands_per_day=_int(e, "MAX_ERRANDS_PER_DAY", 100),
             allowed_hosts=tuple(hosts),
+            kernel_headless=_bool(e, "KERNEL_HEADLESS", False),
             allowed_origins=_csv(e, "ALLOWED_ORIGINS"),
         )

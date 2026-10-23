@@ -119,7 +119,9 @@ def build_server(orch: Orchestrator, auth=None) -> FastMCP:
 def build_orchestrator(settings: Settings) -> Orchestrator:
     registry = Registry.load()
     llm = ClaudeLLM(settings.anthropic_api_key)
-    fetcher = KernelFetcher(settings.kernel_api_key, registry, settings.max_page_chars)
+    fetcher = KernelFetcher(
+        settings.kernel_api_key, registry, settings.max_page_chars, settings.kernel_headless
+    )
     return Orchestrator(
         settings,
         registry,

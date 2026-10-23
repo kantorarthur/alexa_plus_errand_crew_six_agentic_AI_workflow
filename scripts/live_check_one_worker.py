@@ -9,6 +9,7 @@ Costs about a cent. Keys are read from the environment and never printed.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import sys
 import time
@@ -33,6 +34,7 @@ async def main() -> int:
         print("Set ANTHROPIC_API_KEY and KERNEL_API_KEY in this terminal first.")
         return 2
 
+    logging.basicConfig(level=logging.WARNING)
     registry = Registry.load()
     site = registry.site(site_id)
     if site is None or category not in site.categories:

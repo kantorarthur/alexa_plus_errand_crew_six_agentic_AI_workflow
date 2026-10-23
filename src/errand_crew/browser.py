@@ -90,7 +90,10 @@ def build_fetch_js(url: str, allowed_domains: list[str], max_chars: int) -> str:
 
 
 class KernelFetcher:
-    def __init__(self, api_key: str, registry: Registry, max_chars: int) -> None:
+    def __init__(
+        self, api_key: str, registry: Registry, max_chars: int, headless: bool = False
+    ) -> None:
+        self._headless = headless
         self._kernel = AsyncKernel(api_key=api_key or None)
         self._registry = registry
         self._max_chars = max_chars
@@ -98,7 +101,9 @@ class KernelFetcher:
     @asynccontextmanager
     async def open(self):
         """Create one Kernel browser, reuse it for every page, delete it at the end."""
-        browser = await self._kernel.browsers.create(headless=True, timeout_seconds=180)
+        browser = await self._kernel.browsers.create(
+            headless=self._headless, timeout_seconds=180
+        )
         try:
             yield _KernelPages(self, browser.session_id)
         finally:

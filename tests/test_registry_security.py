@@ -140,3 +140,14 @@ def test_looks_blocked():
 )
 def test_grounding(name, price, text, expected):
     assert grounded(name, price, text) is expected
+
+
+def test_kernel_headless_setting():
+    from errand_crew.config import Settings
+
+    base = {"ERRAND_CREW_TOKENS": "demo:" + "t" * 24}
+    assert Settings.from_env(base).kernel_headless is False  # default: with a screen
+    assert Settings.from_env({**base, "KERNEL_HEADLESS": "true"}).kernel_headless is True
+    assert Settings.from_env({**base, "KERNEL_HEADLESS": "0"}).kernel_headless is False
+    with pytest.raises(ValueError):
+        Settings.from_env({**base, "KERNEL_HEADLESS": "maybe"})
