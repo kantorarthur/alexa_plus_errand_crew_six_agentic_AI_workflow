@@ -316,3 +316,4 @@ These measures reduce the risk, they do not remove it. A convincing fake price o
 Four shops and five categories. State and rate-limit counters are in memory and reset when the server restarts. Prices are read at request time and may be out of date. Shop terms of service should be checked before running at scale. The server is built to Alexa+'s MCP requirements, but we tested it with an MCP client that simulates a voice assistant, not on an Alexa+ device.
 
 
+# Co-Author: Claude Code.
