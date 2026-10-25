@@ -12,7 +12,6 @@ The project was developed in 7 hours during the Amazon Developer Hackaton! (http
 
 **You can watch the agents work.** The browsers run on the [Kernel](https://www.kernel.sh) cloud browser infrastructure, as shown in the demo video below. If you run the server yourself with your own Kernel key and `KERNEL_HEADLESS=false`, you can see the four browsers live in the Kernel dashboard.
 
-https://devpost.com/software/errand-crew?ref_content=user-portfolio&ref_feature=in_progress
 
 
 <img width="2000" height="1120" alt="Image" src="https://github.com/user-attachments/assets/c98256af-f620-46ad-b8e3-2c8ffc7c06a3" />
