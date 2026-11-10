@@ -2,6 +2,8 @@
 
 **Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
 
+The project was developed in 7 hours during the Amazon Developer Hackaton! (https://devpost.com/software/errand-crew)
+
 ### The MCP server uses a six agentic AI workflow
 
 - **A planner** (Claude Sonnet 5.5) turns the spoken request into a plan.
@@ -10,7 +12,7 @@
 
 **You can watch the agents work.** The browsers run on the [Kernel](https://www.kernel.sh) cloud browser infrastructure, as shown in the demo video below. If you run the server yourself with your own Kernel key and `KERNEL_HEADLESS=false`, you can see the four browsers live in the Kernel dashboard.
 
-The agents can only visit shops from a fixed allowlist, and everything they read on a page is treated as data, never as instructions.
+
 
 <img width="2000" height="1120" alt="Image" src="https://github.com/user-attachments/assets/c98256af-f620-46ad-b8e3-2c8ffc7c06a3" />
 
@@ -26,6 +28,15 @@ Say you want a cheap phone. You ask your voice assistant, and from there it take
 https://github.com/user-attachments/assets/65202194-5317-4fb7-adba-221c09a53a1d
 
 https://www.youtube.com/watch?v=wEPq4M-xuaM
+
+## Current limitations (TLDR)
+
+- **Shops:** Agent only searches prices on Evomag, Altex, MediaGalaxy and Vexio.
+- **Products:** Agent only searches headphones, TVs, phones, laptops and monitors.
+
+Both limits are deliberate. The agents can only visit the hardcoded shops and category pages listed in `src/errand_crew/sites.yaml`, which is a security measure (they can never be sent to another site) and also makes each request faster, because the agents go straight to the right listing instead of searching the web.
+
+The limits are easy to extend: add a shop, or a category page for a shop, to `sites.yaml`. Each new entry needs its category URLs, and, where the shop supports it, a price-sorting template. Check the shop's `robots.txt` and terms of service first. The registry validates every URL when the server starts.
 
 
 ## Build and run
@@ -66,8 +77,8 @@ Try it with the demo client (see below), using the `/mcp` URL of your service.
 ### Option 2: Run locally
 
 ```bash
-git clone https://github.com/kantorarthur/errand_crew_six_agentic_AI_workflow.git
-cd errand_crew_amazon_hackaton
+git clone https://github.com/kantorarthur/alexa_plus_errand_crew_six_agentic_AI_workflow.git
+cd ./alexa_plus_errand_crew_six_agentic_AI_workflow
 python -m venv .venv
 ```
 
@@ -105,7 +116,7 @@ The demo client behaves like a voice assistant: it starts an errand, polls its s
 
 ```bash
 export MCP_TOKEN="<your-random-token>"      # PowerShell: $env:MCP_TOKEN = "<your-random-token>"
-.venv/bin/python scripts/demo_client.py "cheapest nokia phone" http://localhost:8000/mcp
+.venv/bin/python scripts/demo_client.py "desired item search input" http://localhost:8000/mcp
 ```
 
 For a Render deployment, pass its URL instead: `https://<your-service>.onrender.com/mcp`.
@@ -124,7 +135,7 @@ The tests use a scripted model and a fake browser, so they need no network, no k
 
 **Python:** 3.13 on Render (`PYTHON_VERSION=3.13.5`); the tests also run on 3.14.
 
-### Runtime (`requirements.txt`, pinned)
+### Runtime (`requirements.txt`)
 
 | Package | Version | What it is used for |
 |---|---|---|
