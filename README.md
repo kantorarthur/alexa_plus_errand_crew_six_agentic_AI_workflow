@@ -1,3 +1,5 @@
+<img width="1280" height="640" alt="Image" src="https://github.com/user-attachments/assets/8131660f-ae9d-42e0-a7b6-bf20ac929355" />
+
 # Errand Crew - an observable six agentic AI workflow
 
 **Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
@@ -25,11 +27,11 @@ Comparing prices means opening shop after shop and scrolling. Errand Crew does t
 Say you want a cheap phone. You ask your voice assistant, and from there it takes about half a minute! Isn't it great?
 
 # Demo Video
-https://github.com/user-attachments/assets/65202194-5317-4fb7-adba-221c09a53a1d
+https://github.com/user-attachments/assets/6c4e69d0-1fa2-48d1-998a-5a00732f05da
 
 https://www.youtube.com/watch?v=wEPq4M-xuaM
 
-## Current limitations (TLDR)
+## Current limitations
 
 - **Shops:** Agent only searches prices on Evomag, Altex, MediaGalaxy and Vexio.
 - **Products:** Agent only searches headphones, TVs, phones, laptops and monitors.
