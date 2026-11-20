@@ -1,0 +1,4 @@
+pyserial
+sounddevice
+numpy
+faster-whisper>=1.2
