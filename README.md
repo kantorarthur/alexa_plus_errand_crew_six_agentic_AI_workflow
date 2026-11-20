@@ -2,9 +2,12 @@
 
 # Errand Crew - an observable six agentic AI workflow
 
-**Alexa+ MCP server that sends parallel browser agents across online shops, compares options, and speaks the answer back.**
+### Speak a product request, and six AI agents compare prices across Romanian shops in parallel and read the cheapest offer back to you.
 
-The project was developed in 7 hours during the Amazon Developer Hackaton! (https://devpost.com/software/errand-crew)
+The initial project was developed in 7 hours during the Amazon Developer Hackaton! (https://devpost.com/software/errand-crew)
+
+## Live Demo - Speak your request and get back the answer in less than a minute!
+https://github.com/user-attachments/assets/d5f4bf88-2ab3-4244-97a6-8416f87bfa19
 
 ### The MCP server uses a six agentic AI workflow
 
